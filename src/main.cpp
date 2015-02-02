@@ -8,34 +8,126 @@
 #include <GLFW/glfw3.h>
 
 #include <unistd.h>
+#include <sys/wait.h>
 
 #include <iostream>
 
 #include <vector>
-#include <functional>
 #include <string>
 
-void sendCommand(int fd, std::string command)
+#include <mutex>
+#include <memory>
+
+class JoystickInput
 {
-    command.push_back('\n');
-    write(fd, command.c_str(), command.length());
-}
+    private:
+        std::vector<unsigned char> prevButtons;
+        std::vector<float> prevAxis;
 
-std::string readCommandOutput(int fd)
+        std::vector<unsigned char> buttons;
+        std::vector<float> axis;
+
+    public:
+        JoystickInput()
+            : prevButtons{},
+              prevAxis{}
+        {
+        }
+
+        void updateButtons(int joystickNum=GLFW_JOYSTICK_1)
+        {
+            prevButtons = std::move(buttons);
+            prevAxis = std::move(axis);
+
+            int buttonCount = 0;
+            auto* buttonStates = glfwGetJoystickButtons(joystickNum, &buttonCount);
+
+            for (int i = 0; i < buttonCount; ++i)
+                buttons.push_back(buttonStates[i]);
+
+            int axisCount = 0;
+            auto* axisStates = glfwGetJoystickAxes(joystickNum, &axisCount);
+
+            for (int i = 0; i < axisCount; ++i)
+                axis.push_back(axisStates[i]);
+        }
+
+        unsigned char getButton(int buttonId)
+        {
+            return buttons[buttonId];
+        }
+
+        float getAxis(int axisId)
+        {
+            return axis[axisId];
+        }
+
+        bool buttonChange(int buttonId)
+        {
+            return buttons[buttonId] == prevButtons[buttonId];
+        }
+
+        bool axisChange(int axisId)
+        {
+            return axis[axisId] == prevAxis[axisId];
+        }
+};
+
+class ScanMem
 {
-    const int bufsize = 256;
-    char buffer[bufsize];
+    private:
+        int infd;
+        int outfd;
 
-    buffer[read(fd, buffer, bufsize)] = 0;
+        std::recursive_mutex scanLock;
 
-    return std::string(buffer);
-}
+    public:
+        ScanMem(int in, int out)
+            : infd{in}, outfd{out}
+        {
+        }
+
+        void sendCommand(std::string command)
+        {
+            scanLock.lock();
+
+            command.push_back('\n');
+            write(outfd, command.c_str(), command.length());
+
+            scanLock.unlock();
+        }
+
+        void dumpRegion(const std::string& address, int length)
+        {
+            std::string command { "dump " + address + " " + std::to_string(length) };
+            sendCommand(command);
+        }
+
+        void exit()
+        {
+            sendCommand("exit");
+        }
+
+        std::string readCommandOutput()
+        {
+            scanLock.lock();
+
+            const int bufsize = 256;
+            char buffer[bufsize];
+
+            buffer[read(infd, buffer, bufsize)] = 0;
+
+            scanLock.unlock();
+
+            return std::string(buffer);
+        }
+};
 
 int main(int argc, char *argv[])
 {
     if (argc < 3)
     {
-        std::cout << "Usage: spectrum <pid> <address>" << std::endl;
+        std::cout << "Usage: # blocktracker <pid> <address>" << std::endl;
         return -1;
     }
 
@@ -59,16 +151,11 @@ int main(int argc, char *argv[])
     dup2(outfd[0], 0); // Make the read end of outfd pipe as stdin
     dup2(infd[1], 1); // Make the write end of infd as stdout
 
-    if (!fork()) // Child
+    int subprocessPid = fork();
+
+    if (!subprocessPid) // Child
     {
-        const char *argv[] =
-            {
-                "scanmem",
-                "-b",
-                "-p",
-                pid.c_str(),
-                0
-            };
+        const char *argv[] { "/usr/bin/scanmem", "-b", "-p", pid.c_str(), nullptr };
 
         close(outfd[0]); // Not required for the child
         close(outfd[1]);
@@ -88,12 +175,10 @@ int main(int argc, char *argv[])
         close(outfd[0]); // These are being used by the child
         close(infd[1]);
 
-        // // Read Relevant(hopefully) addresses.
-        // FILE* addressFile = fopen("address.txt", "r");
+        ScanMem scanMem(infd[0], outfd[1]);
 
-        // fclose(addressFile);
-
-        std::string scanMemVersion = readCommandOutput(infd[0]);
+        // Scanmem immediately outputs its version number
+        std::string scanMemVersion = scanMem.readCommandOutput();
         printf("Version: %s\n", scanMemVersion.c_str());
 
         // sendCommand(outfd[1], "help");
@@ -107,7 +192,7 @@ int main(int argc, char *argv[])
 
         glfwWindowHint(GLFW_RESIZABLE, false);
         GLFWwindow* window = glfwCreateWindow(640, 480,
-                                              "My Game Window",
+                                              "BlockTracker",
                                               nullptr, nullptr);
 
         glfwMakeContextCurrent(window);
@@ -236,10 +321,11 @@ int main(int argc, char *argv[])
                 timer.start();
             }
 
-            sendCommand(outfd[1], "dump " + address + " 2");
+            scanMem.dumpRegion(address, 2);
+            // scanMem.sendCommand("dump " + address + " 2");
 
             // Big-endian hexadecimal string
-            std::string hexStrRaw = readCommandOutput(infd[0]);
+            std::string hexStrRaw = scanMem.readCommandOutput();
             std::string hexStr = hexStrRaw.substr(3, 2) + hexStrRaw.substr(0, 2);
             level = std::stoi(hexStr, nullptr, 16);
 
@@ -267,6 +353,11 @@ int main(int argc, char *argv[])
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
+
+        scanMem.exit();
+
+        int childReturnStatus{};
+        wait(&childReturnStatus);
 
         glfwTerminate();
         return 0;
