@@ -18,6 +18,89 @@
 #include <mutex>
 #include <memory>
 
+#include <thread>
+#include <chrono>
+
+class Application
+{
+    private:
+        GLFWwindow* window;
+
+    public:
+        Application()
+        {
+            initGLFW();
+            initOpenGL();
+        }
+
+        ~Application()
+        {
+            glfwTerminate();
+        }
+
+        void clear()
+        {
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+        }
+
+        void pollEvents()
+        {
+            glfwPollEvents();
+        }
+
+        void swapBuffers()
+        {
+            glfwSwapBuffers(window);
+        }
+
+        bool shouldWindowClose()
+        {
+            return glfwWindowShouldClose(window);
+        }
+
+    private:
+        bool initGLFW()
+        {
+            if (!glfwInit())
+            {
+                std::cout << "Error initializing glfw." << std::endl;
+                return false;
+            }
+
+            glfwWindowHint(GLFW_RESIZABLE, false);
+            window = glfwCreateWindow(640, 480,
+                                      "BlockTracker",
+                                      nullptr, nullptr);
+
+            glfwMakeContextCurrent(window);
+
+            return true;
+        }
+
+        bool initOpenGL()
+        {
+            // OpenGL 2d perspective
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            glOrtho(0.0f, 640.0f, 480.0f, 0.0f, -1.0f, 1.0f);
+
+            // Initialize modelview matrix
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_BLEND);
+            glDisable(GL_LIGHTING);
+            glDisable(GL_DEPTH_TEST);
+
+            glEnable(GL_LINE_SMOOTH);
+            glLineWidth(2.0f);
+
+            return true;
+        }
+};
+
 class JoystickInput
 {
     private:
@@ -97,6 +180,11 @@ class ScanMem
             scanLock.unlock();
         }
 
+        void setProcess(const std::string& pid)
+        {
+            sendCommand("pid " + pid);
+        }
+
         void dumpRegion(const std::string& address, int length)
         {
             std::string command { "dump " + address + " " + std::to_string(length) };
@@ -118,6 +206,8 @@ class ScanMem
             buffer[read(infd, buffer, bufsize)] = 0;
 
             scanLock.unlock();
+
+            // std::cout << ">>>" << '\n' << buffer << '\n' << "<<<" << std::endl;
 
             return std::string(buffer);
         }
@@ -155,7 +245,7 @@ int main(int argc, char *argv[])
 
     if (!subprocessPid) // Child
     {
-        const char *argv[] { "/usr/bin/scanmem", "-b", "-p", pid.c_str(), nullptr };
+        const char *argv[] { "/usr/bin/scanmem", "-b", nullptr };
 
         close(outfd[0]); // Not required for the child
         close(outfd[1]);
@@ -179,42 +269,11 @@ int main(int argc, char *argv[])
 
         // Scanmem immediately outputs its version number
         std::string scanMemVersion = scanMem.readCommandOutput();
-        printf("Version: %s\n", scanMemVersion.c_str());
 
-        // sendCommand(outfd[1], "help");
-        // printf("Output:\n%s\n", readCommandOutput(infd[0]).c_str());
+        scanMem.setProcess(pid);
+        std::string procMaps = scanMem.readCommandOutput();
 
-        if (!glfwInit())
-        {
-            std::cout << "Error initializing glfw." << std::endl;
-            return 1;
-        }
-
-        glfwWindowHint(GLFW_RESIZABLE, false);
-        GLFWwindow* window = glfwCreateWindow(640, 480,
-                                              "BlockTracker",
-                                              nullptr, nullptr);
-
-        glfwMakeContextCurrent(window);
-
-        // OpenGL 2d perspective
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(0.0f, 640.0f, 480.0f, 0.0f, -1.0f, 1.0f);
-
-        // Initialize modelview matrix
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glEnable(GL_BLEND);
-        glDisable(GL_LIGHTING);
-        glDisable(GL_DEPTH_TEST);
-
-        glEnable(GL_LINE_SMOOTH);
-        glLineWidth(2.0f);
-
-        Stopwatch timer;
+        Application app;
 
         // Create Font
         Font font("DroidSansFallback.ttf");
@@ -272,17 +331,17 @@ int main(int argc, char *argv[])
         axisMap.push_back({ -6, "L",  80, 60 });
         axisMap.push_back({  6, "R", 120, 60 });
 
+        Stopwatch timer;
         ButtonSpectrum spectrum;
         LineGraph graph;
 
-        int level = 0;
-        int prevLevel = 0;
+        int level{};
+        int prevLevel{};
 
         bool running = true;
-        while (!glfwWindowShouldClose(window) && running)
+        while (!app.shouldWindowClose() && running)
         {
-            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
+            app.clear();
 
             glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
 
@@ -312,7 +371,7 @@ int main(int argc, char *argv[])
 
             if (buttonStates[5] == GLFW_PRESS)
             {
-                level = 0;
+                // level = 0;
                 prevLevel = 0;
 
                 graph.clear();
@@ -331,7 +390,6 @@ int main(int argc, char *argv[])
 
             float gameTime = timer.getFloatTime() - 1.7f;
             font.draw(20, 20, strformat("time: %.2f", gameTime));
-            // font.draw(20, 40, strformat("level: %d", level));
 
             // Level-up!
             if (level > prevLevel)
@@ -350,8 +408,8 @@ int main(int argc, char *argv[])
             graph.draw(80.0f, 80.0f, font);
             spectrum.draw(400.0f, 10.0f, font);
 
-            glfwSwapBuffers(window);
-            glfwPollEvents();
+            app.swapBuffers();
+            app.pollEvents();
         }
 
         scanMem.exit();
@@ -359,7 +417,6 @@ int main(int argc, char *argv[])
         int childReturnStatus{};
         wait(&childReturnStatus);
 
-        glfwTerminate();
         return 0;
     }
 }
