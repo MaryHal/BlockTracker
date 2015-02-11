@@ -5,13 +5,11 @@
 #include <vector>
 
 class Font;
+class JoystickInput;
 
 class ButtonSpectrum
 {
     private:
-        unsigned char prevButtonStates[16];
-        float prevAxisStates[16];
-
         std::vector<std::string> buttons;
 
     public:
@@ -19,8 +17,7 @@ class ButtonSpectrum
         ~ButtonSpectrum();
 
         void clear();
-        void addButton(int buttonCount, const unsigned char* buttonStates,
-                       int axisCount, const float* axisStates);
+        void addButton(const JoystickInput& joystick);
         void newSection();
         void draw(float x, float y, const Font& font) const;
 };

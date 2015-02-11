@@ -2,6 +2,7 @@
 
 #include "Font.hpp"
 #include "LineGraph.hpp"
+#include "JoystickInput.hpp"
 #include "ButtonSpectrum.hpp"
 #include "StringUtils.hpp"
 
@@ -98,61 +99,6 @@ class Application
             glLineWidth(2.0f);
 
             return true;
-        }
-};
-
-class JoystickInput
-{
-    private:
-        std::vector<unsigned char> prevButtons;
-        std::vector<float> prevAxis;
-
-        std::vector<unsigned char> buttons;
-        std::vector<float> axis;
-
-    public:
-        JoystickInput()
-            : prevButtons{},
-              prevAxis{}
-        {
-        }
-
-        void updateButtons(int joystickNum=GLFW_JOYSTICK_1)
-        {
-            prevButtons = std::move(buttons);
-            prevAxis = std::move(axis);
-
-            int buttonCount = 0;
-            auto* buttonStates = glfwGetJoystickButtons(joystickNum, &buttonCount);
-
-            for (int i = 0; i < buttonCount; ++i)
-                buttons.push_back(buttonStates[i]);
-
-            int axisCount = 0;
-            auto* axisStates = glfwGetJoystickAxes(joystickNum, &axisCount);
-
-            for (int i = 0; i < axisCount; ++i)
-                axis.push_back(axisStates[i]);
-        }
-
-        unsigned char getButton(int buttonId)
-        {
-            return buttons[buttonId];
-        }
-
-        float getAxis(int axisId)
-        {
-            return axis[axisId];
-        }
-
-        bool buttonChange(int buttonId)
-        {
-            return buttons[buttonId] == prevButtons[buttonId];
-        }
-
-        bool axisChange(int axisId)
-        {
-            return axis[axisId] == prevAxis[axisId];
         }
 };
 
@@ -284,52 +230,19 @@ int main(int argc, char *argv[])
             return -1;
         }
 
-        struct ButtonDisplay
-        {
-            public:
-                int id;
-                std::string button;
-                int xPos, yPos;
+        JoystickInput joystick(GLFW_JOYSTICK_1);
 
-                bool test(const unsigned char* buttonStates)
-                {
-                    return buttonStates[id] == GLFW_PRESS;
-                }
-        };
+        // std::vector<ButtonDisplay> buttonMap;
+        // buttonMap.push_back({ 0, "D", 140, 70 });
+        // buttonMap.push_back({ 1, "A", 140, 50 });
+        // buttonMap.push_back({ 2, "B", 160, 50 });
+        // buttonMap.push_back({ 3, "C", 180, 50 });
 
-        struct AxisDisplay
-        {
-            public:
-                int id;
-                std::string button;
-                int xPos, yPos;
-
-                bool test(const float* axisStates)
-                {
-                    if (id < 0)
-                    {
-                        int index = -id;
-                        return axisStates[index] < -0.9f;
-                    }
-                    else
-                    {
-                        int index = id;
-                        return axisStates[index] > 0.9f;
-                    }
-                }
-        };
-
-        std::vector<ButtonDisplay> buttonMap;
-        buttonMap.push_back({ 0, "D", 140, 70 });
-        buttonMap.push_back({ 1, "A", 140, 50 });
-        buttonMap.push_back({ 2, "B", 160, 50 });
-        buttonMap.push_back({ 3, "C", 180, 50 });
-
-        std::vector<AxisDisplay> axisMap;
-        axisMap.push_back({ -7, "U", 100, 40 });
-        axisMap.push_back({  7, "D", 100, 80 });
-        axisMap.push_back({ -6, "L",  80, 60 });
-        axisMap.push_back({  6, "R", 120, 60 });
+        // std::vector<AxisDisplay> axisMap;
+        // axisMap.push_back({ -7, "U", 100, 40 });
+        // axisMap.push_back({  7, "D", 100, 80 });
+        // axisMap.push_back({ -6, "L",  80, 60 });
+        // axisMap.push_back({  6, "R", 120, 60 });
 
         Stopwatch timer;
         ButtonSpectrum spectrum;
@@ -343,33 +256,11 @@ int main(int argc, char *argv[])
         {
             app.clear();
 
-            glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
+            joystick.updateButtons();
 
-            int buttonCount = 0;
-            const unsigned char* buttonStates = glfwGetJoystickButtons(GLFW_JOYSTICK_1, &buttonCount);
+            spectrum.addButton(joystick);
 
-            for (ButtonDisplay& b : buttonMap)
-            {
-                if (b.test(buttonStates))
-                {
-                    font.draw(b.xPos, b.yPos, b.button);
-                }
-            }
-
-            int axisCount = 0;
-            const float* axisStates = glfwGetJoystickAxes(GLFW_JOYSTICK_1, &axisCount);
-
-            for (AxisDisplay& b : axisMap)
-            {
-                if (b.test(axisStates))
-                {
-                    font.draw(b.xPos, b.yPos, b.button);
-                }
-            }
-
-            spectrum.addButton(buttonCount, buttonStates, axisCount, axisStates);
-
-            if (buttonStates[5] == GLFW_PRESS)
+            if (joystick.getButton(myButtons::RESET) == GLFW_PRESS)
             {
                 // level = 0;
                 prevLevel = 0;
@@ -381,7 +272,6 @@ int main(int argc, char *argv[])
             }
 
             scanMem.dumpRegion(address, 2);
-            // scanMem.sendCommand("dump " + address + " 2");
 
             // Big-endian hexadecimal string
             std::string hexStrRaw = scanMem.readCommandOutput();
@@ -395,6 +285,7 @@ int main(int argc, char *argv[])
             if (level > prevLevel)
             {
                 prevLevel = level;
+
                 graph.addPoint(level, gameTime);
                 spectrum.newSection();
             }

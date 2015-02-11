@@ -26,6 +26,8 @@ build obj/src/Font.o: compile src/Font.cpp
 build obj/src/Stopwatch.o: compile src/Stopwatch.cpp
 build obj/src/ButtonSpectrum.o: compile src/ButtonSpectrum.cpp
 build obj/src/main.o: compile src/main.cpp
+build obj/src/JoystickInput.o: compile src/JoystickInput.cpp
 
 build ./bin/blocktracker: link obj/src/StringUtils.o obj/src/LineGraph.o $
-    obj/src/Font.o obj/src/Stopwatch.o obj/src/ButtonSpectrum.o obj/src/main.o
+    obj/src/Font.o obj/src/Stopwatch.o obj/src/ButtonSpectrum.o $
+    obj/src/main.o obj/src/JoystickInput.o

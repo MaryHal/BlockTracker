@@ -1,7 +1,5 @@
 #include "ButtonSpectrum.hpp"
-
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "JoystickInput.hpp"
 
 #include <cmath>
 
@@ -22,41 +20,33 @@ void ButtonSpectrum::clear()
     buttons.emplace_back();
 }
 
-void ButtonSpectrum::addButton(int buttonCount, const unsigned char* buttonStates,
-                               int axisCount, const float* axisStates)
+void ButtonSpectrum::addButton(const JoystickInput& joystick)
 {
-    for (int i = 0; i < buttonCount; ++i)
-    {
-        // Only care if we switch TO the pressed state.
-        if (prevButtonStates[i] != buttonStates[i] && buttonStates[i] == GLFW_PRESS)
-        {
-            if (i == 0)
-                buttons.back() += 'D';
-            if (i == 1)
-                buttons.back() += 'A';
-            if (i == 2)
-                buttons.back() += 'B';
-            if (i == 3)
-                buttons.back() += 'C';
-        }
-        prevButtonStates[i] = buttonStates[i];
-    }
+    if (joystick.buttonChange(myButtons::D) &&
+        joystick.getButton(myButtons::D) == GLFW_PRESS)
+        buttons.back() += 'D';
+    if (joystick.buttonChange(myButtons::A) &&
+        joystick.getButton(myButtons::A) == GLFW_PRESS)
+        buttons.back() += 'A';
+    if (joystick.buttonChange(myButtons::B) &&
+        joystick.getButton(myButtons::B) == GLFW_PRESS)
+        buttons.back() += 'B';
+    if (joystick.buttonChange(myButtons::C) &&
+        joystick.getButton(myButtons::C) == GLFW_PRESS)
+        buttons.back() += 'C';
 
-    for (int i = 0; i < axisCount; ++i)
-    {
-        if (prevAxisStates[i] != axisStates[i])
-        {
-            if (i == 7 && axisStates[i] < -0.9f)
-                buttons.back() += 'U';
-            if (i == 7 && axisStates[i] > 0.9f)
-                buttons.back() += 'D';
-            if (i == 6 && axisStates[i] < -0.9f)
-                buttons.back() += 'L';
-            if (i == 6 && axisStates[i] > 0.9f)
-                buttons.back() += 'R';
-        }
-        prevAxisStates[i] = axisStates[i];
-    }
+    if (joystick.axisChange(myAxis::HORI) &&
+        joystick.getAxis(myAxis::HORI) < -0.9f)
+        buttons.back() += '<';
+    if (joystick.axisChange(myAxis::HORI) &&
+        joystick.getAxis(myAxis::HORI) > 0.9f)
+        buttons.back() += '>';
+    if (joystick.axisChange(myAxis::VERT) &&
+        joystick.getAxis(myAxis::VERT) < -0.9f)
+        buttons.back() += '^';
+    if (joystick.axisChange(myAxis::VERT) &&
+        joystick.getAxis(myAxis::VERT) > 0.9f)
+        buttons.back() += 'v';
 }
 
 void ButtonSpectrum::newSection()
