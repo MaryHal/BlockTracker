@@ -1,4 +1,5 @@
 #include "JoystickInput.hpp"
+#include <stdexcept>
 
 JoystickInput::JoystickInput(int joystickNum)
     : joystick{joystickNum},
@@ -7,6 +8,11 @@ JoystickInput::JoystickInput(int joystickNum)
       buttons{},
       axis{}
       {
+          if (!glfwJoystickPresent(joystickNum))
+          {
+              throw std::runtime_error{"Joystick " + std::to_string(joystickNum) + " not found."};
+          }
+
           updateButtons();
       }
 

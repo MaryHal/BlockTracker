@@ -6,6 +6,10 @@
 
 #include <vector>
 
+// Currently hard-coded :(
+// TODO: Button profiles
+
+// Weak enums with less naming conflicts.
 namespace myButtons
 {
     enum { D = 0, A = 1, B = 2, C = 3, RESET = 5 };
@@ -28,6 +32,8 @@ class JoystickInput
         std::vector<float> axis;
 
     public:
+        // Initialize joystick and update button data.
+        // Throws a runtime_error exception if joystickNum does not exist.
         JoystickInput(int joystickNum=GLFW_JOYSTICK_1);
 
         void updateButtons();

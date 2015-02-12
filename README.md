@@ -23,6 +23,6 @@ Rough Roadmap
 
 1. Simpler method to get the level address. Right now I have a VERY ugly python wrapper over scanmem attempts to automatically probe for it.
 
-2. Cleanup the code.
+1. ptrace instead of wrapping scanmem.
 
-3. Prettify everything. While it _works_, it's __really__ ugly right now.
+3. Prettify the interface. While everything _works_ right now, it's __really__ ugly right now.

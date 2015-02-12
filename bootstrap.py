@@ -55,9 +55,9 @@ if sys.platform == 'win32':
 def warning(string):
     print('warning: {}'.format(string))
 
-# configuration
-if 'g++' not in args.cxx:
-    warning('compiler not explicitly supported: {}'.format(args.cxx))
+# # configuration
+# if 'g++' not in args.cxx:
+#     warning('compiler not explicitly supported: {}'.format(args.cxx))
 
 if args.debug:
     cxxflags.extend(['-g', '-O0', '-DDEBUG'])

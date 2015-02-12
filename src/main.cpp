@@ -22,6 +22,8 @@
 #include <thread>
 #include <chrono>
 
+#include <stdexcept>
+
 class Application
 {
     private:
@@ -61,12 +63,11 @@ class Application
         }
 
     private:
-        bool initGLFW()
+        void initGLFW()
         {
             if (!glfwInit())
             {
-                std::cout << "Error initializing glfw." << std::endl;
-                return false;
+                throw std::runtime_error{"Error initializing glfw."};;
             }
 
             glfwWindowHint(GLFW_RESIZABLE, false);
@@ -75,11 +76,9 @@ class Application
                                       nullptr, nullptr);
 
             glfwMakeContextCurrent(window);
-
-            return true;
         }
 
-        bool initOpenGL()
+        void initOpenGL()
         {
             // OpenGL 2d perspective
             glMatrixMode(GL_PROJECTION);
@@ -97,8 +96,6 @@ class Application
 
             glEnable(GL_LINE_SMOOTH);
             glLineWidth(2.0f);
-
-            return true;
         }
 };
 
@@ -153,8 +150,6 @@ class ScanMem
 
             scanLock.unlock();
 
-            // std::cout << ">>>" << '\n' << buffer << '\n' << "<<<" << std::endl;
-
             return std::string(buffer);
         }
 };
@@ -167,8 +162,9 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    std::string pid = argv[1];
-    std::string address = argv[2];
+    // TODO: validate command line arguments
+    std::string pid{argv[1]}; // processid to scan.
+    std::string address{argv[2]}; // specific memory address to scan.
 
     int outfd[2];
     int infd[2];
@@ -224,12 +220,6 @@ int main(int argc, char *argv[])
         // Create Font
         Font font("DroidSansFallback.ttf");
 
-        if (!glfwJoystickPresent(GLFW_JOYSTICK_1))
-        {
-            std::cout << "Joystick 1 not found." << std::endl;
-            return -1;
-        }
-
         JoystickInput joystick(GLFW_JOYSTICK_1);
 
         // std::vector<ButtonDisplay> buttonMap;
@@ -262,6 +252,8 @@ int main(int argc, char *argv[])
 
             if (joystick.getButton(myButtons::RESET) == GLFW_PRESS)
             {
+                // std::cout << "\n\n\n\n\n\n\n\n" << std::endl;
+                
                 // level = 0;
                 prevLevel = 0;
 
@@ -281,9 +273,36 @@ int main(int argc, char *argv[])
             float gameTime = timer.getFloatTime() - 1.7f;
             font.draw(20, 20, strformat("time: %.2f", gameTime));
 
+            // if (joystick.buttonChange(myButtons::D) &&
+            //     joystick.getButton(myButtons::D) == GLFW_PRESS)
+            //     std::cout << "D" << std::flush;
+            // if (joystick.buttonChange(myButtons::A) &&
+            //     joystick.getButton(myButtons::A) == GLFW_PRESS)
+            //     std::cout << "A" << std::flush;
+            // if (joystick.buttonChange(myButtons::B) &&
+            //     joystick.getButton(myButtons::B) == GLFW_PRESS)
+            //     std::cout << "B" << std::flush;
+            // if (joystick.buttonChange(myButtons::C) &&
+            //     joystick.getButton(myButtons::C) == GLFW_PRESS)
+            //     std::cout << "C" << std::flush;
+
+            // if (joystick.axisChange(myAxis::HORI) &&
+            //     joystick.getAxis(myAxis::HORI) < -0.9f)
+            //     std::cout << "←" << std::flush;
+            // if (joystick.axisChange(myAxis::HORI) &&
+            //     joystick.getAxis(myAxis::HORI) > 0.9f)
+            //     std::cout << "→" << std::flush;
+            // if (joystick.axisChange(myAxis::VERT) &&
+            //     joystick.getAxis(myAxis::VERT) < -0.9f)
+            //     std::cout << "↑" << std::flush;
+            // if (joystick.axisChange(myAxis::VERT) &&
+            //     joystick.getAxis(myAxis::VERT) > 0.9f)
+            //     std::cout << "↓" << std::flush;
+
             // Level-up!
             if (level > prevLevel)
             {
+                std::cout << std::endl;
                 prevLevel = level;
 
                 graph.addPoint(level, gameTime);
