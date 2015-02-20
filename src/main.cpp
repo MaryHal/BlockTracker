@@ -99,7 +99,7 @@ class Application
         }
 };
 
-class ScanMem
+class ScanMemController
 {
     private:
         int infd;
@@ -108,7 +108,7 @@ class ScanMem
         std::recursive_mutex scanLock;
 
     public:
-        ScanMem(int in, int out)
+        ScanMemController(int in, int out)
             : infd{in}, outfd{out}
         {
         }
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
         close(outfd[0]); // These are being used by the child
         close(infd[1]);
 
-        ScanMem scanMem(infd[0], outfd[1]);
+        ScanMemController scanMem(infd[0], outfd[1]);
 
         // Scanmem immediately outputs its version number
         std::string scanMemVersion = scanMem.readCommandOutput();
@@ -221,6 +221,26 @@ int main(int argc, char *argv[])
         Font font("DroidSansFallback.ttf");
 
         JoystickInput joystick(GLFW_JOYSTICK_1);
+
+        struct Button
+        {
+            public:
+                std::string buttonStr;
+                int buttonOrAxis;
+                int state;
+                int x;
+                int y;
+         };
+
+        auto checkButton = [](const JoystickInput& joystick, const Button& b)
+        {
+            return joystick.getButton(b.buttonOrAxis) == b.state;
+        };
+
+        auto checkAxis = [](const JoystickInput& joystick, const Button& b)
+        {
+            return joystick.getAxis(b.buttonOrAxis) <= b.state;
+        };
 
         // std::vector<ButtonDisplay> buttonMap;
         // buttonMap.push_back({ 0, "D", 140, 70 });
@@ -252,8 +272,8 @@ int main(int argc, char *argv[])
 
             if (joystick.getButton(myButtons::RESET) == GLFW_PRESS)
             {
-                // std::cout << "\n\n\n\n\n\n\n\n" << std::endl;
-                
+                std::cout << "\n\n\n\n\n\n\n\n" << std::endl;
+
                 // level = 0;
                 prevLevel = 0;
 
@@ -273,31 +293,31 @@ int main(int argc, char *argv[])
             float gameTime = timer.getFloatTime() - 1.7f;
             font.draw(20, 20, strformat("time: %.2f", gameTime));
 
-            // if (joystick.buttonChange(myButtons::D) &&
-            //     joystick.getButton(myButtons::D) == GLFW_PRESS)
-            //     std::cout << "D" << std::flush;
-            // if (joystick.buttonChange(myButtons::A) &&
-            //     joystick.getButton(myButtons::A) == GLFW_PRESS)
-            //     std::cout << "A" << std::flush;
-            // if (joystick.buttonChange(myButtons::B) &&
-            //     joystick.getButton(myButtons::B) == GLFW_PRESS)
-            //     std::cout << "B" << std::flush;
-            // if (joystick.buttonChange(myButtons::C) &&
-            //     joystick.getButton(myButtons::C) == GLFW_PRESS)
-            //     std::cout << "C" << std::flush;
+            if (joystick.buttonChange(myButtons::D) &&
+                joystick.getButton(myButtons::D) == GLFW_PRESS)
+                std::cout << "D" << std::endl;
+            if (joystick.buttonChange(myButtons::A) &&
+                joystick.getButton(myButtons::A) == GLFW_PRESS)
+                std::cout << "A" << std::flush;
+            if (joystick.buttonChange(myButtons::B) &&
+                joystick.getButton(myButtons::B) == GLFW_PRESS)
+                std::cout << "B" << std::flush;
+            if (joystick.buttonChange(myButtons::C) &&
+                joystick.getButton(myButtons::C) == GLFW_PRESS)
+                std::cout << "C" << std::flush;
 
-            // if (joystick.axisChange(myAxis::HORI) &&
-            //     joystick.getAxis(myAxis::HORI) < -0.9f)
-            //     std::cout << "←" << std::flush;
-            // if (joystick.axisChange(myAxis::HORI) &&
-            //     joystick.getAxis(myAxis::HORI) > 0.9f)
-            //     std::cout << "→" << std::flush;
-            // if (joystick.axisChange(myAxis::VERT) &&
-            //     joystick.getAxis(myAxis::VERT) < -0.9f)
-            //     std::cout << "↑" << std::flush;
-            // if (joystick.axisChange(myAxis::VERT) &&
-            //     joystick.getAxis(myAxis::VERT) > 0.9f)
-            //     std::cout << "↓" << std::flush;
+            if (joystick.axisChange(myAxis::HORI) &&
+                joystick.getAxis(myAxis::HORI) <= -1.0f)
+                std::cout << "←" << std::flush;
+            if (joystick.axisChange(myAxis::HORI) &&
+                joystick.getAxis(myAxis::HORI) >= 1.0f)
+                std::cout << "→" << std::flush;
+            if (joystick.axisChange(myAxis::VERT) &&
+                joystick.getAxis(myAxis::VERT) <= -1.0f)
+                std::cout << "↑" << std::flush;
+            if (joystick.axisChange(myAxis::VERT) &&
+                joystick.getAxis(myAxis::VERT) >= 1.0f)
+                std::cout << "↓" << std::flush;
 
             // Level-up!
             if (level > prevLevel)

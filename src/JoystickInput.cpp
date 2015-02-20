@@ -18,6 +18,7 @@ JoystickInput::JoystickInput(int joystickNum)
 
 void JoystickInput::updateButtons()
 {
+    // Store all the previous button states. This will also clear the current saved button states.
     prevButtons = std::move(buttons);
     prevAxis = std::move(axis);
 
