@@ -24,22 +24,34 @@
 
 #include <stdexcept>
 
-class Application
+class Window
 {
     private:
+        const std::string title;
+        const unsigned int width;
+        const unsigned int height;
         GLFWwindow* window;
 
     public:
-        Application()
+        Window(const std::string& windowTitle,
+               unsigned int windowWidth,
+               unsigned int windowHeight,
+               Window* share)
+            : title{windowTitle},
+              width{windowWidth},
+              height{windowHeight}
         {
-            initGLFW();
+            createWindowContext(share);
             initOpenGL();
         }
 
-        ~Application()
+        ~Window()
         {
-            glfwTerminate();
+            glfwDestroyWindow(window);
         }
+
+        Window(const Window& other) = delete;
+        Window& operator=(const Window& other) = delete;
 
         void clear()
         {
@@ -62,18 +74,25 @@ class Application
             return glfwWindowShouldClose(window);
         }
 
-    private:
-        void initGLFW()
+        void makeContextCurrent()
         {
-            if (!glfwInit())
-            {
-                throw std::runtime_error{"Error initializing glfw."};;
-            }
+            glfwMakeContextCurrent(window);
+        }
 
+        GLFWwindow* getGLFWwindow()
+        {
+            return window;
+        }
+
+    private:
+        void createWindowContext(Window* share)
+        {
             glfwWindowHint(GLFW_RESIZABLE, false);
-            window = glfwCreateWindow(640, 480,
-                                      "BlockTracker",
-                                      nullptr, nullptr);
+            glfwWindowHint(GLFW_SAMPLES, 4);
+
+            window = glfwCreateWindow(width, height,
+                                      title.c_str(),
+                                      nullptr, share == nullptr ? nullptr : share->getGLFWwindow());
 
             glfwMakeContextCurrent(window);
         }
@@ -83,7 +102,7 @@ class Application
             // OpenGL 2d perspective
             glMatrixMode(GL_PROJECTION);
             glLoadIdentity();
-            glOrtho(0.0f, 640.0f, 480.0f, 0.0f, -1.0f, 1.0f);
+            glOrtho(0.0f, width, height, 0.0f, -1.0f, 1.0f);
 
             // Initialize modelview matrix
             glMatrixMode(GL_MODELVIEW);
@@ -130,7 +149,7 @@ class ScanMemController
 
         void dumpRegion(const std::string& address, int length)
         {
-            std::string command { "dump " + address + " " + std::to_string(length) };
+            std::string command{ "dump " + address + " " + std::to_string(length) };
             sendCommand(command);
         }
 
@@ -215,32 +234,38 @@ int main(int argc, char *argv[])
         scanMem.setProcess(pid);
         std::string procMaps = scanMem.readCommandOutput();
 
-        Application app;
+        if (!glfwInit())
+        {
+            throw std::runtime_error{"Error initializing glfw."};;
+        }
+
+        Window graphWindow{"Blocktracker Graph", 640, 480, nullptr};
+        Window spectrumWindow{"Blocktracker Spectrum", 100, 300, &graphWindow};
 
         // Create Font
         Font font("DroidSansFallback.ttf");
 
         JoystickInput joystick(GLFW_JOYSTICK_1);
 
-        struct Button
-        {
-            public:
-                std::string buttonStr;
-                int buttonOrAxis;
-                int state;
-                int x;
-                int y;
-         };
+        // struct Button
+        // {
+        //     public:
+        //         std::string buttonStr;
+        //         int buttonOrAxis;
+        //         int state;
+        //         int x;
+        //         int y;
+        //  };
 
-        auto checkButton = [](const JoystickInput& joystick, const Button& b)
-        {
-            return joystick.getButton(b.buttonOrAxis) == b.state;
-        };
+        // auto checkButton = [](const JoystickInput& joystick, const Button& b)
+        // {
+        //     return joystick.getButton(b.buttonOrAxis) == b.state;
+        // };
 
-        auto checkAxis = [](const JoystickInput& joystick, const Button& b)
-        {
-            return joystick.getAxis(b.buttonOrAxis) <= b.state;
-        };
+        // auto checkAxis = [](const JoystickInput& joystick, const Button& b)
+        // {
+        //     return joystick.getAxis(b.buttonOrAxis) <= b.state;
+        // };
 
         // std::vector<ButtonDisplay> buttonMap;
         // buttonMap.push_back({ 0, "D", 140, 70 });
@@ -262,9 +287,13 @@ int main(int argc, char *argv[])
         int prevLevel{};
 
         bool running = true;
-        while (!app.shouldWindowClose() && running)
+        while (!graphWindow.shouldWindowClose() && running)
         {
-            app.clear();
+            graphWindow.makeContextCurrent();
+            graphWindow.clear();
+
+            spectrumWindow.makeContextCurrent();
+            spectrumWindow.clear();
 
             joystick.updateButtons();
 
@@ -272,8 +301,6 @@ int main(int argc, char *argv[])
 
             if (joystick.getButton(myButtons::RESET) == GLFW_PRESS)
             {
-                std::cout << "\n\n\n\n\n\n\n\n" << std::endl;
-
                 // level = 0;
                 prevLevel = 0;
 
@@ -283,6 +310,7 @@ int main(int argc, char *argv[])
                 timer.start();
             }
 
+            // Parse scanmem output for level string
             scanMem.dumpRegion(address, 2);
 
             // Big-endian hexadecimal string
@@ -290,39 +318,14 @@ int main(int argc, char *argv[])
             std::string hexStr = hexStrRaw.substr(3, 2) + hexStrRaw.substr(0, 2);
             level = std::stoi(hexStr, nullptr, 16);
 
+            graphWindow.makeContextCurrent();
+
             float gameTime = timer.getFloatTime() - 1.7f;
             font.draw(20, 20, strformat("time: %.2f", gameTime));
-
-            if (joystick.buttonChange(myButtons::D) &&
-                joystick.getButton(myButtons::D) == GLFW_PRESS)
-                std::cout << "D" << std::endl;
-            if (joystick.buttonChange(myButtons::A) &&
-                joystick.getButton(myButtons::A) == GLFW_PRESS)
-                std::cout << "A" << std::flush;
-            if (joystick.buttonChange(myButtons::B) &&
-                joystick.getButton(myButtons::B) == GLFW_PRESS)
-                std::cout << "B" << std::flush;
-            if (joystick.buttonChange(myButtons::C) &&
-                joystick.getButton(myButtons::C) == GLFW_PRESS)
-                std::cout << "C" << std::flush;
-
-            if (joystick.axisChange(myAxis::HORI) &&
-                joystick.getAxis(myAxis::HORI) <= -1.0f)
-                std::cout << "←" << std::flush;
-            if (joystick.axisChange(myAxis::HORI) &&
-                joystick.getAxis(myAxis::HORI) >= 1.0f)
-                std::cout << "→" << std::flush;
-            if (joystick.axisChange(myAxis::VERT) &&
-                joystick.getAxis(myAxis::VERT) <= -1.0f)
-                std::cout << "↑" << std::flush;
-            if (joystick.axisChange(myAxis::VERT) &&
-                joystick.getAxis(myAxis::VERT) >= 1.0f)
-                std::cout << "↓" << std::flush;
 
             // Level-up!
             if (level > prevLevel)
             {
-                std::cout << std::endl;
                 prevLevel = level;
 
                 graph.addPoint(level, gameTime);
@@ -336,11 +339,18 @@ int main(int argc, char *argv[])
             }
 
             graph.draw(80.0f, 80.0f, font);
-            spectrum.draw(400.0f, 10.0f, font);
 
-            app.swapBuffers();
-            app.pollEvents();
+            spectrumWindow.makeContextCurrent();
+            spectrum.draw(10.0f, 10.0f, font);
+
+            graphWindow.swapBuffers();
+            spectrumWindow.swapBuffers();
+
+            graphWindow.pollEvents();
+            spectrumWindow.pollEvents();
         }
+
+        glfwTerminate();
 
         scanMem.exit();
 
