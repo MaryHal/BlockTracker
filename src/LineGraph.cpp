@@ -2,8 +2,7 @@
 
 #include <GL/glew.h>
 
-#include "Font.hpp"
-// #include "StringUtils.hpp"
+#include <fontgen/OpenGLFont.hpp>
 
 LineGraph::LineGraph()
 {
@@ -32,7 +31,7 @@ void LineGraph::addPoint(int level, float time)
     data.back().emplace_back(level, time);
 }
 
-void LineGraph::draw(float x, float y, const Font& font) const
+void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
 {
     const float graphWidth = 300.0f;
     const float graphHeight = 300.0f;
@@ -59,7 +58,7 @@ void LineGraph::draw(float x, float y, const Font& font) const
         glEnd();
 
         if (!data.back().empty())
-            font.draw(x, y, std::to_string(data.back().back().level));
+            font.draw(x, y, std::to_wstring(data.back().back().level));
 
         // glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
         // glBegin(GL_LINES);

@@ -3,7 +3,7 @@
 
 #include <cmath>
 
-#include "Font.hpp"
+#include <fontgen/OpenGLFont.hpp>
 
 ButtonSpectrum::ButtonSpectrum()
 {
@@ -24,29 +24,29 @@ void ButtonSpectrum::addButton(const JoystickInput& joystick)
 {
     if (joystick.buttonChange(myButtons::D) &&
         joystick.getButton(myButtons::D) == GLFW_PRESS)
-        buttons.back() += 'D';
+        buttons.back() += L"D";
     if (joystick.buttonChange(myButtons::A) &&
         joystick.getButton(myButtons::A) == GLFW_PRESS)
-        buttons.back() += 'A';
+        buttons.back() += L"A";
     if (joystick.buttonChange(myButtons::B) &&
         joystick.getButton(myButtons::B) == GLFW_PRESS)
-        buttons.back() += 'B';
+        buttons.back() += L"B";
     if (joystick.buttonChange(myButtons::C) &&
         joystick.getButton(myButtons::C) == GLFW_PRESS)
-        buttons.back() += 'C';
+        buttons.back() += L"C";
 
     if (joystick.axisChange(myAxis::HORI) &&
         joystick.getAxis(myAxis::HORI) < -0.9f)
-        buttons.back() += '<';
+        buttons.back() += L"⇦";
     if (joystick.axisChange(myAxis::HORI) &&
         joystick.getAxis(myAxis::HORI) > 0.9f)
-        buttons.back() += '>';
+        buttons.back() += L"⇨";
     if (joystick.axisChange(myAxis::VERT) &&
         joystick.getAxis(myAxis::VERT) < -0.9f)
-        buttons.back() += '^';
+        buttons.back() += L"⇧";
     if (joystick.axisChange(myAxis::VERT) &&
         joystick.getAxis(myAxis::VERT) > 0.9f)
-        buttons.back() += 'v';
+        buttons.back() += L"⇩";
 }
 
 void ButtonSpectrum::newSection()
@@ -54,7 +54,7 @@ void ButtonSpectrum::newSection()
     buttons.emplace_back();
 }
 
-void ButtonSpectrum::draw(float x, float y, const Font& font) const
+void ButtonSpectrum::draw(float x, float y, const fgen::OpenGLFont& font) const
 {
     glPushMatrix();
 

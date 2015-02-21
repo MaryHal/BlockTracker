@@ -1,0 +1,3 @@
+[submodule "ext/FontGen"]
+	path = ext/FontGen
+	url = git@github.com:sanford1/FontGen.git

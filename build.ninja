@@ -2,8 +2,9 @@ ninja_required_version = 1.3
 ar = ar
 cxx = clang++
 cxxflags = -Wall -Wextra -pedantic -pedantic-errors -std=c++11 -DNDEBUG -O3 $
-    -Wno-constexpr-not-const -Wno-unused-value -Wno-mismatched-tags
-ldflags = -lGLEW -lGL -lglfw
+    -Wno-constexpr-not-const -Wno-unused-value -Wno-mismatched-tags $
+    -I./ext/FontGen/include
+ldflags = -L./ext/FontGen/lib -lGL -lglfw -lfontgen
 
 rule bootstrap
   command = python bootstrap.py --cxx=clang++
@@ -23,12 +24,11 @@ rule ar
 build build.ninja: bootstrap | bootstrap.py
 build obj/src/StringUtils.o: compile src/StringUtils.cpp
 build obj/src/LineGraph.o: compile src/LineGraph.cpp
-build obj/src/Font.o: compile src/Font.cpp
 build obj/src/Stopwatch.o: compile src/Stopwatch.cpp
 build obj/src/ButtonSpectrum.o: compile src/ButtonSpectrum.cpp
 build obj/src/main.o: compile src/main.cpp
 build obj/src/JoystickInput.o: compile src/JoystickInput.cpp
 
 build ./bin/blocktracker: link obj/src/StringUtils.o obj/src/LineGraph.o $
-    obj/src/Font.o obj/src/Stopwatch.o obj/src/ButtonSpectrum.o $
-    obj/src/main.o obj/src/JoystickInput.o
+    obj/src/Stopwatch.o obj/src/ButtonSpectrum.o obj/src/main.o $
+    obj/src/JoystickInput.o

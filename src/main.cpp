@@ -1,12 +1,12 @@
+#include <fontgen/OpenGLFont.hpp>
+#include <GLFW/glfw3.h>
+
 #include "Stopwatch.hpp"
 
-#include "Font.hpp"
 #include "LineGraph.hpp"
 #include "JoystickInput.hpp"
 #include "ButtonSpectrum.hpp"
 #include "StringUtils.hpp"
-
-#include <GLFW/glfw3.h>
 
 #include <unistd.h>
 #include <sys/wait.h>
@@ -240,10 +240,15 @@ int main(int argc, char *argv[])
         }
 
         Window graphWindow{"Blocktracker Graph", 640, 480, nullptr};
-        Window spectrumWindow{"Blocktracker Spectrum", 100, 300, &graphWindow};
+        Window spectrumWindow{"Blocktracker Spectrum", 120, 300, &graphWindow};
 
         // Create Font
-        Font font("DroidSansFallback.ttf");
+        fgen::OpenGLFont font{"DroidSansFallback.ttf",
+            {
+                {20.0f, fgen::charset::ascii},
+                {20.0f, { 0x21E6, 0x21E9 } }
+            }
+        };
 
         JoystickInput joystick(GLFW_JOYSTICK_1);
 
@@ -320,8 +325,8 @@ int main(int argc, char *argv[])
 
             graphWindow.makeContextCurrent();
 
-            float gameTime = timer.getFloatTime() - 1.7f;
-            font.draw(20, 20, strformat("time: %.2f", gameTime));
+            float gameTime{timer.getFloatTime() - 1.7f};
+            font.draw(20, 20, std::to_wstring(gameTime));
 
             // Level-up!
             if (level > prevLevel)

@@ -37,10 +37,10 @@ args = parser.parse_args()
 BUILD_FILENAME = 'build.ninja'
 
 compiler = args.cxx
-include = []
+include = ['-I./ext/FontGen/include']
 depends = []
-libdirs = []
-ldflags = ['-lGLEW', '-lGL', '-lglfw']
+libdirs = ['-L./ext/FontGen/lib']
+ldflags = ['-lGL', '-lglfw', '-lfontgen']
 cxxflags = ['-Wall', '-Wextra', '-pedantic', '-pedantic-errors', '-std=c++11']
 
 if sys.platform == 'win32':
@@ -74,8 +74,8 @@ ninja = ninja_syntax.Writer(open('build.ninja', 'w'))
 ninja.variable('ninja_required_version', '1.3')
 ninja.variable('ar', 'ar')
 ninja.variable('cxx', compiler)
-ninja.variable('cxxflags', flags(cxxflags + include + libdirs + depends))
-ninja.variable('ldflags', flags(ldflags))
+ninja.variable('cxxflags', flags(cxxflags + include + depends))
+ninja.variable('ldflags', flags(libdirs + ldflags))
 ninja.newline()
 
 # Rules

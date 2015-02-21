@@ -1,7 +1,6 @@
 #ifndef _JoystickInput_hpp_
 #define _JoystickInput_hpp_
 
-#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 #include <vector>

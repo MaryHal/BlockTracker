@@ -3,7 +3,7 @@
 
 #include <vector>
 
-class Font;
+namespace fgen { class OpenGLFont; }
 
 class LineGraph
 {
@@ -29,7 +29,7 @@ class LineGraph
 
         void clear();
         void addPoint(int level, float time);
-        void draw(float x, float y, const Font& font) const;
+        void draw(float x, float y, const fgen::OpenGLFont& font) const;
 };
 
 #endif /* _LineGraph_hpp_ */
