@@ -239,54 +239,25 @@ int main(int argc, char *argv[])
             throw std::runtime_error{"Error initializing glfw."};;
         }
 
-        Window graphWindow{"Blocktracker Graph", 640, 480, nullptr};
-        Window spectrumWindow{"Blocktracker Spectrum", 120, 300, &graphWindow};
+        Window graphWindow{"Blocktracker Graph", 280, 440, nullptr};
+        Window recordWindow{"Blocktracker Record", 280, 100, &graphWindow};
+        Window spectrumWindow{"Blocktracker Spectrum", 120, 210, &graphWindow};
+
+        Stopwatch timer;
+        ButtonSpectrum spectrum;
+        LineGraph graph{280.0f - 40, 440.0f - 40};
+
+        std::vector<int> previousRuns{};
 
         // Create Font
         fgen::OpenGLFont font{"DroidSansFallback.ttf",
             {
-                {20.0f, fgen::charset::ascii},
-                {20.0f, { 0x21E6, 0x21E9 } }
+                { 20.0f, fgen::charset::ascii },
+                { 20.0f, { 0x21E6, 0x21EA } }
             }
         };
 
         JoystickInput joystick(GLFW_JOYSTICK_1);
-
-        // struct Button
-        // {
-        //     public:
-        //         std::string buttonStr;
-        //         int buttonOrAxis;
-        //         int state;
-        //         int x;
-        //         int y;
-        //  };
-
-        // auto checkButton = [](const JoystickInput& joystick, const Button& b)
-        // {
-        //     return joystick.getButton(b.buttonOrAxis) == b.state;
-        // };
-
-        // auto checkAxis = [](const JoystickInput& joystick, const Button& b)
-        // {
-        //     return joystick.getAxis(b.buttonOrAxis) <= b.state;
-        // };
-
-        // std::vector<ButtonDisplay> buttonMap;
-        // buttonMap.push_back({ 0, "D", 140, 70 });
-        // buttonMap.push_back({ 1, "A", 140, 50 });
-        // buttonMap.push_back({ 2, "B", 160, 50 });
-        // buttonMap.push_back({ 3, "C", 180, 50 });
-
-        // std::vector<AxisDisplay> axisMap;
-        // axisMap.push_back({ -7, "U", 100, 40 });
-        // axisMap.push_back({  7, "D", 100, 80 });
-        // axisMap.push_back({ -6, "L",  80, 60 });
-        // axisMap.push_back({  6, "R", 120, 60 });
-
-        Stopwatch timer;
-        ButtonSpectrum spectrum;
-        LineGraph graph;
 
         int level{};
         int prevLevel{};
@@ -294,18 +265,14 @@ int main(int argc, char *argv[])
         bool running = true;
         while (!graphWindow.shouldWindowClose() && running)
         {
-            graphWindow.makeContextCurrent();
-            graphWindow.clear();
-
-            spectrumWindow.makeContextCurrent();
-            spectrumWindow.clear();
-
             joystick.updateButtons();
 
             spectrum.addButton(joystick);
 
-            if (joystick.getButton(myButtons::RESET) == GLFW_PRESS)
+            if (joystick.buttonChange(myButtons::RESET) &&
+                joystick.getButton(myButtons::RESET) == GLFW_RELEASE)
             {
+                previousRuns.push_back(prevLevel);
                 // level = 0;
                 prevLevel = 0;
 
@@ -313,6 +280,12 @@ int main(int argc, char *argv[])
                 spectrum.clear();
 
                 timer.start();
+            }
+
+            if (joystick.buttonChange(myButtons::TOGGLE) &&
+                joystick.getButton(myButtons::TOGGLE) == GLFW_PRESS)
+            {
+                graph.toggleXScale();
             }
 
             // Parse scanmem output for level string
@@ -323,10 +296,7 @@ int main(int argc, char *argv[])
             std::string hexStr = hexStrRaw.substr(3, 2) + hexStrRaw.substr(0, 2);
             level = std::stoi(hexStr, nullptr, 16);
 
-            graphWindow.makeContextCurrent();
-
             float gameTime{timer.getFloatTime() - 1.7f};
-            font.draw(20, 20, std::to_wstring(gameTime));
 
             // Level-up!
             if (level > prevLevel)
@@ -343,16 +313,53 @@ int main(int argc, char *argv[])
                 timer.stop();
             }
 
-            graph.draw(80.0f, 80.0f, font);
+            graphWindow.makeContextCurrent();
+            {
+                graphWindow.clear();
+
+                font.draw(20, 20, std::to_wstring(gameTime));
+                graph.draw(20.0f, 20.0f, font);
+            }
+            graphWindow.swapBuffers();
+            graphWindow.pollEvents();
 
             spectrumWindow.makeContextCurrent();
-            spectrum.draw(10.0f, 10.0f, font);
+            {
+                spectrumWindow.clear();
 
-            graphWindow.swapBuffers();
+                spectrum.draw(10.0f, 0.0f, font);
+            }
             spectrumWindow.swapBuffers();
-
-            graphWindow.pollEvents();
             spectrumWindow.pollEvents();
+
+            recordWindow.makeContextCurrent();
+            {
+                recordWindow.clear();
+
+                std::wstring last{};
+
+                int i = 0;
+                for (auto iter = previousRuns.rbegin(); iter != previousRuns.rend(); ++iter)
+                {
+                    last += std::to_wstring(*iter);
+
+                    if (i < 4)
+                    {
+                        last += L", ";
+                        i++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                font.draw(10, 20, L"Run Count: " + std::to_wstring(previousRuns.size()));
+                font.draw(10, 40, L"Last Five Runs:");
+                font.draw(10, 60, last);
+            }
+            recordWindow.swapBuffers();
+            recordWindow.pollEvents();
         }
 
         glfwTerminate();

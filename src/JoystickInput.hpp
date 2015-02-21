@@ -11,7 +11,7 @@
 // Weak enums with less naming conflicts.
 namespace myButtons
 {
-    enum { D = 0, A = 1, B = 2, C = 3, RESET = 5 };
+    enum { D = 0, A = 1, B = 2, C = 3, RESET = 5, TOGGLE = 4 };
 }
 
 namespace myAxis

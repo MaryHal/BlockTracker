@@ -22,13 +22,17 @@ class LineGraph
 
     private:
         std::vector<std::vector<DataPoint> > data;
+        float graphWidth;
+        float graphHeight;
+        float xScale;
 
     public:
-        LineGraph();
+        LineGraph(float width=300.0f, float height=300.0f);
         ~LineGraph();
 
         void clear();
         void addPoint(int level, float time);
+        void toggleXScale();
         void draw(float x, float y, const fgen::OpenGLFont& font) const;
 };
 

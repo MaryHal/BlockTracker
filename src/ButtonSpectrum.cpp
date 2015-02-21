@@ -36,16 +36,16 @@ void ButtonSpectrum::addButton(const JoystickInput& joystick)
         buttons.back() += L"C";
 
     if (joystick.axisChange(myAxis::HORI) &&
-        joystick.getAxis(myAxis::HORI) < -0.9f)
+        joystick.getAxis(myAxis::HORI) <= -1.0f)
         buttons.back() += L"⇦";
     if (joystick.axisChange(myAxis::HORI) &&
-        joystick.getAxis(myAxis::HORI) > 0.9f)
+        joystick.getAxis(myAxis::HORI) >= 1.0f)
         buttons.back() += L"⇨";
     if (joystick.axisChange(myAxis::VERT) &&
-        joystick.getAxis(myAxis::VERT) < -0.9f)
+        joystick.getAxis(myAxis::VERT) <= -1.0f)
         buttons.back() += L"⇧";
     if (joystick.axisChange(myAxis::VERT) &&
-        joystick.getAxis(myAxis::VERT) > 0.9f)
+        joystick.getAxis(myAxis::VERT) >= 1.0f)
         buttons.back() += L"⇩";
 }
 
@@ -60,6 +60,7 @@ void ButtonSpectrum::draw(float x, float y, const fgen::OpenGLFont& font) const
 
     glColor4f(0.8f, 0.8f, 0.8f, 1.0f);
 
+    // Display the pressed buttons for the last 10 pieces.
     int i = 10;
     for (auto iter = buttons.rbegin();
          i > 0 && iter != buttons.rend();
