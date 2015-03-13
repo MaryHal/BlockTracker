@@ -1,7 +1,7 @@
 BlockTracker
 ============
 
-Wrapper over [scanmem](https://github.com/coolwanglu/scanmem) to provide simple visuals for the [Tetris: The Grandmaster](https://en.wikipedia.org/wiki/Tetris:_The_Grand_Master) series.
+Wrapper over [scanmem](https://github.com/coolwanglu/scanmem) to provide simple visuals for the [TGM](https://en.wikipedia.org/wiki/Tetris:_The_Grand_Master) series.
 
 This is all rough around the edges so far, but currently, BlockTracker can keep track of buttons pressed per level, a level graph (per section of 100 levels), and a simple button display.
 
@@ -24,3 +24,5 @@ Rough Roadmap
 1. Simpler method to automatically get the level address. Right now I have a VERY ugly python wrapper over scanmem attempts to probe for it by sending scripted keypresses.
 
 2. Prettify the interface. While everything _works_ right now, it's __really__ ugly right now.
+
+3. This code is the worse code I've ever written ever. I adopted the gamedev mentality where you "just code, don't worry about how nice it is. As long as it works".

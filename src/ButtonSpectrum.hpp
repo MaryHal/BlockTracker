@@ -4,21 +4,33 @@
 #include <string>
 #include <vector>
 
-namespace fgen { class OpenGLFont; }
+#include "JoystickInput.hpp"
 
-class JoystickInput;
+namespace fgen { class OpenGLFont; }
 
 class ButtonSpectrum
 {
     private:
-        std::vector<std::wstring> buttons;
+        struct ButtonID
+        {
+            public:
+                ButtonID(wchar_t b)
+                    : button{b}, held{true}
+                {
+                }
+                wchar_t button;
+                bool held;
+        };
+
+        std::vector<std::vector<ButtonID> > buttons;
 
     public:
         ButtonSpectrum();
-        ~ButtonSpectrum();
 
         void clear();
         void addButton(const JoystickInput& joystick);
+        void unhold(wchar_t button);
+
         void newSection();
         void draw(float x, float y, const fgen::OpenGLFont& font) const;
 };

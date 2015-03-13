@@ -4,10 +4,12 @@
 
 #include <fontgen/OpenGLFont.hpp>
 
+const std::vector<float> LineGraph::SCALES{30.0f, 45.0f, 60.0f, 75.0f};
+
 LineGraph::LineGraph(float width, float height)
     : graphWidth{width},
       graphHeight{height},
-      xScale{30.0f}
+      scaleIndex{0}
 {
     data.emplace_back();
 }
@@ -35,13 +37,11 @@ void LineGraph::addPoint(int level, float time)
     data.back().emplace_back(level, time);
 }
 
-void LineGraph::toggleXScale()
+void LineGraph::cycleXScale()
 {
-    // Is this the worst thing ever?
-    if (xScale > 29.0f && xScale < 31.0f)
-        xScale = 60.0f;
-    else if (xScale > 59.0f && xScale < 61.0f)
-        xScale = 30.0f;
+    scaleIndex++;
+    if (scaleIndex >= SCALES.size())
+        scaleIndex = 0;
 }
 
 void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
@@ -63,6 +63,24 @@ void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
             glEnd();
 
             // Horizontal lines
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             glBegin(GL_LINES);
             {
                 glVertex2f(0.0f, graphHeight * i / 10.0f);
@@ -84,7 +102,7 @@ void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
             {
                 for (DataPoint d : *sectionData)
                 {
-                    x = graphWidth * ((d.time - sectionData->front().time) / xScale);
+                    x = graphWidth * ((d.time - sectionData->front().time) / SCALES[scaleIndex]);
                     y = graphHeight - graphHeight * (d.level % 100) / 100;
 
                     // Oh God
@@ -102,7 +120,7 @@ void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
         if (!data.empty() && !data.back().empty())
         {
             DataPoint last = data.back().back();
-            x = graphWidth * ((last.time - data.back().front().time) / xScale);
+            x = graphWidth * ((last.time - data.back().front().time) / SCALES[scaleIndex]);
             y = graphHeight - graphHeight * (last.level % 100) / 100;
 
             glColor4f(0.8f, 0.0f, 0.8f, 1.0f);
@@ -126,7 +144,7 @@ void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
         }
         glEnd();
 
-        font.draw(graphWidth - 18.0f, graphHeight + 16.0f, std::to_wstring(xScale));
+        font.draw(graphWidth - 18.0f, graphHeight + 16.0f, std::to_wstring(SCALES[scaleIndex]));
 
         font.draw(graphWidth / 2.0f - 50.0f, graphHeight + 16.0f, L"Section Time");
 

@@ -24,7 +24,9 @@ class LineGraph
         std::vector<std::vector<DataPoint> > data;
         float graphWidth;
         float graphHeight;
-        float xScale;
+
+        unsigned int scaleIndex;
+        static const std::vector<float> SCALES;
 
     public:
         LineGraph(float width=300.0f, float height=300.0f);
@@ -32,7 +34,7 @@ class LineGraph
 
         void clear();
         void addPoint(int level, float time);
-        void toggleXScale();
+        void cycleXScale();
         void draw(float x, float y, const fgen::OpenGLFont& font) const;
 };
 

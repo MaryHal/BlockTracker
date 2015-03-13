@@ -239,21 +239,29 @@ int main(int argc, char *argv[])
             throw std::runtime_error{"Error initializing glfw."};;
         }
 
-        Window graphWindow{"Blocktracker Graph", 280, 440, nullptr};
-        Window recordWindow{"Blocktracker Record", 280, 100, &graphWindow};
+        Window graphWindow{"Blocktracker Graph", 240, 440, nullptr};
+        Window recordWindow{"Blocktracker Record", 240, 100, &graphWindow};
         Window spectrumWindow{"Blocktracker Spectrum", 120, 210, &graphWindow};
 
         Stopwatch timer;
         ButtonSpectrum spectrum;
-        LineGraph graph{280.0f - 40, 440.0f - 40};
+        LineGraph graph{240.0f - 40, 440.0f - 40};
 
-        std::vector<int> previousRuns{};
+        std::vector<int> previousRuns{0, 0, 0, 0, 0};
+        int sumPB{};
+        int levelPB{};
 
         // Create Font
         fgen::OpenGLFont font{"DroidSansFallback.ttf",
             {
                 { 20.0f, fgen::charset::ascii },
-                { 20.0f, { 0x21E6, 0x21EA } }
+                { 20.0f, { 0x21E6, 0x21EA } } // Arrows
+            }
+        };
+        fgen::OpenGLFont smallFont{"DroidSansFallback.ttf",
+            {
+                { 18.0f, fgen::charset::ascii },
+                { 18.0f, { 0x21E6, 0x21EA } } // Arrows
             }
         };
 
@@ -272,7 +280,6 @@ int main(int argc, char *argv[])
             if (joystick.buttonChange(myButtons::RESET) &&
                 joystick.getButton(myButtons::RESET) == GLFW_RELEASE)
             {
-                previousRuns.push_back(prevLevel);
                 // level = 0;
                 prevLevel = 0;
 
@@ -280,12 +287,14 @@ int main(int argc, char *argv[])
                 spectrum.clear();
 
                 timer.start();
+
+                // previousRuns.push_back(prevLevel);
             }
 
             if (joystick.buttonChange(myButtons::TOGGLE) &&
                 joystick.getButton(myButtons::TOGGLE) == GLFW_PRESS)
             {
-                graph.toggleXScale();
+                graph.cycleXScale();
             }
 
             // Parse scanmem output for level string
@@ -303,6 +312,9 @@ int main(int argc, char *argv[])
             {
                 prevLevel = level;
 
+                if (levelPB < level)
+                    levelPB = level;
+
                 graph.addPoint(level, gameTime);
                 spectrum.newSection();
             }
@@ -311,13 +323,15 @@ int main(int argc, char *argv[])
             if (prevLevel > level && level == 0)
             {
                 timer.stop();
+                previousRuns.push_back(prevLevel);
+                prevLevel = 0;
             }
 
             graphWindow.makeContextCurrent();
             {
                 graphWindow.clear();
 
-                font.draw(20, 20, std::to_wstring(gameTime));
+                // font.draw(20, 20, std::to_wstring(gameTime));
                 graph.draw(20.0f, 20.0f, font);
             }
             graphWindow.swapBuffers();
@@ -338,25 +352,33 @@ int main(int argc, char *argv[])
 
                 std::wstring last{};
 
-                int i = 0;
+                int sum{};
+                int i{};
+
                 for (auto iter = previousRuns.rbegin(); iter != previousRuns.rend(); ++iter)
                 {
                     last += std::to_wstring(*iter);
+                    sum += *iter;
 
                     if (i < 4)
-                    {
-                        last += L", ";
-                        i++;
-                    }
-                    else
-                    {
+                        last += L" + ";
+
+                    i++;
+
+                    if (i == 5)
                         break;
-                    }
                 }
 
-                font.draw(10, 20, L"Run Count: " + std::to_wstring(previousRuns.size()));
+                last += L" = " + std::to_wstring(sum);
+
+                if (sumPB < sum)
+                    sumPB = sum;
+
+                font.draw(10, 20, L"Run Count: " + std::to_wstring(previousRuns.size() - 5));
                 font.draw(10, 40, L"Last Five Runs:");
-                font.draw(10, 60, last);
+                smallFont.draw(10, 60, last);
+
+                font.draw(10, 80, L"Best Sum of 5: " + std::to_wstring(sumPB));
             }
             recordWindow.swapBuffers();
             recordWindow.pollEvents();
