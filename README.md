@@ -25,4 +25,4 @@ Rough Roadmap
 
 2. Prettify the interface. While everything _works_ right now, it's __really__ ugly right now.
 
-3. This code is the worse code I've ever written ever. I adopted the gamedev mentality where you "just code, don't worry about how nice it is. As long as it works".
+3. This code is the worst code I've ever written ever. I adopted the speedy gamedev mentality where you just try to get something that works while disregarding the elegance of the solution.

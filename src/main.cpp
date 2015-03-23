@@ -249,7 +249,6 @@ int main(int argc, char *argv[])
 
         std::vector<int> previousRuns{0, 0, 0, 0, 0};
         int sumPB{};
-        int levelPB{};
 
         // Create Font
         fgen::OpenGLFont font{"DroidSansFallback.ttf",
@@ -267,6 +266,7 @@ int main(int argc, char *argv[])
 
         JoystickInput joystick(GLFW_JOYSTICK_1);
 
+        int levelPB{783};
         int level{};
         int prevLevel{};
 
@@ -324,6 +324,10 @@ int main(int argc, char *argv[])
             {
                 timer.stop();
                 previousRuns.push_back(prevLevel);
+
+                if (prevLevel > levelPB)
+                    levelPB = prevLevel;
+
                 prevLevel = 0;
             }
 
@@ -378,7 +382,9 @@ int main(int argc, char *argv[])
                 font.draw(10, 40, L"Last Five Runs:");
                 smallFont.draw(10, 60, last);
 
-                font.draw(10, 80, L"Best Sum of 5: " + std::to_wstring(sumPB));
+                font.draw(10, 80,
+                          L"Best Sum of 5: " + std::to_wstring(sumPB) +
+                          L"Level PB: " + std::to_wstring(levelPB));
             }
             recordWindow.swapBuffers();
             recordWindow.pollEvents();

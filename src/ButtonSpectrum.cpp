@@ -146,7 +146,7 @@ void ButtonSpectrum::draw(float x, float y, const fgen::OpenGLFont& font) const
         {
             // Sooooo inefficient!
             if (b.held)
-                glColor4f(1.0f, 0.0f, 1.0f, 1.0f);
+                glColor4f(1.0f, 1.0f, 0.0f, 1.0f);
             else
                 glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
