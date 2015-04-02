@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
         LineGraph graph{240.0f - 40, 440.0f - 40};
 
         std::vector<int> previousRuns{0, 0, 0, 0, 0};
-        int sumPB{};
+        int sumPB{0};
 
         // Create Font
         fgen::OpenGLFont font{"DroidSansFallback.ttf",
@@ -266,7 +266,8 @@ int main(int argc, char *argv[])
 
         JoystickInput joystick(GLFW_JOYSTICK_1);
 
-        int levelPB{783};
+        bool runStarted{false};
+        // int levelPB{783};
         int level{};
         int prevLevel{};
 
@@ -280,6 +281,7 @@ int main(int argc, char *argv[])
             if (joystick.buttonChange(myButtons::RESET) &&
                 joystick.getButton(myButtons::RESET) == GLFW_RELEASE)
             {
+                runStarted = true;
                 // level = 0;
                 prevLevel = 0;
 
@@ -307,28 +309,33 @@ int main(int argc, char *argv[])
 
             float gameTime{timer.getFloatTime() - 1.7f};
 
-            // Level-up!
-            if (level > prevLevel)
+            if (runStarted)
             {
-                prevLevel = level;
+                // Level-up!
+                if (level > prevLevel)
+                {
+                    prevLevel = level;
 
-                if (levelPB < level)
-                    levelPB = level;
+                    // if (levelPB < level)
+                    //     levelPB = level;
 
-                graph.addPoint(level, gameTime);
-                spectrum.newSection();
-            }
+                    graph.addPoint(level, gameTime);
+                    spectrum.newSection();
+                }
 
-            // We died.
-            if (prevLevel > level && level == 0)
-            {
-                timer.stop();
-                previousRuns.push_back(prevLevel);
+                // We died.
+                if (prevLevel > level && level == 0)
+                {
+                    timer.stop();
+                    previousRuns.push_back(prevLevel);
 
-                if (prevLevel > levelPB)
-                    levelPB = prevLevel;
+                    // if (prevLevel > levelPB)
+                    //     levelPB = prevLevel;
 
-                prevLevel = 0;
+                    prevLevel = 0;
+
+                    runStarted = false;
+                }
             }
 
             graphWindow.makeContextCurrent();
@@ -378,13 +385,12 @@ int main(int argc, char *argv[])
                 if (sumPB < sum)
                     sumPB = sum;
 
-                font.draw(10, 20, L"Run Count: " + std::to_wstring(previousRuns.size() - 5));
-                font.draw(10, 40, L"Last Five Runs:");
-                smallFont.draw(10, 60, last);
+                smallFont.draw(10, 18, L"Run Count: " + std::to_wstring(previousRuns.size() - 5) + (runStarted ? L" (r)" : L"") );
+                smallFont.draw(10, 36, L"Last Five Runs:");
+                smallFont.draw(10, 54, last);
 
-                font.draw(10, 80,
-                          L"Best Sum of 5: " + std::to_wstring(sumPB) +
-                          L"Level PB: " + std::to_wstring(levelPB));
+                smallFont.draw(10, 72, L"Best Sum of Five Today: " + std::to_wstring(sumPB));
+                // smallFont.draw(10, 90, L"Level PB: " + std::to_wstring(levelPB));
             }
             recordWindow.swapBuffers();
             recordWindow.pollEvents();

@@ -48,7 +48,6 @@ void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
 {
     glPushMatrix();
     glTranslatef(x, y, 0.0f);
-
     {
         // Gridlines
         glColor4f(1.0f, 1.0f, 1.0f, 0.1f);
@@ -63,24 +62,6 @@ void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
             glEnd();
 
             // Horizontal lines
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             glBegin(GL_LINES);
             {
                 glVertex2f(0.0f, graphHeight * i / 10.0f);
@@ -92,7 +73,16 @@ void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
         float x{0.0f};
         float y{0.0f};
 
-        float sectionAlpha = 1.0f;
+        float sectionAlpha{1.0f};
+
+        float colors[4][3] {
+            { 0.8f, 0.8f, 0.8f }, // Nothing / Single
+            { 0.3f, 0.0f, 0.8f }, // Double
+            { 0.5f, 0.2f, 0.9f }, // Triple
+            { 1.0f, 1.0f, 0.0f }  // Tetris
+        };
+
+        int prevLevel{0};
 
         // Section Lines
         for (auto sectionData = data.rbegin(); sectionData != data.rend(); ++sectionData)
@@ -109,21 +99,33 @@ void LineGraph::draw(float x, float y, const fgen::OpenGLFont& font) const
                     if (sectionData->size() > 5 && d.level == 100)
                         y = 0.0f;
 
+                    int levelDiff{d.level - prevLevel};
+                    if (levelDiff == 1)
+                        glColor4f(colors[0][0], colors[0][1], colors[0][2], sectionAlpha);
+                    else if (levelDiff == 2)
+                        glColor4f(colors[1][0], colors[1][1], colors[1][2], sectionAlpha);
+                    else if (levelDiff == 3)
+                        glColor4f(colors[2][0], colors[2][1], colors[2][2], sectionAlpha);
+                    else if (levelDiff >= 4)
+                        glColor4f(colors[3][0], colors[3][1], colors[3][2], sectionAlpha);
+                    prevLevel = d.level;
+
                     glVertex2f(x, y);
                 }
             }
             glEnd();
 
-            sectionAlpha /= 3.0f;
+            sectionAlpha /= 4.0f;
         }
 
+        // Draw current level.
         if (!data.empty() && !data.back().empty())
         {
             DataPoint last = data.back().back();
             x = graphWidth * ((last.time - data.back().front().time) / SCALES[scaleIndex]);
             y = graphHeight - graphHeight * (last.level % 100) / 100;
 
-            glColor4f(0.8f, 0.0f, 0.8f, 1.0f);
+            glColor4f(0.8f, 0.8f, 0.8f, 0.8f);
             if (!data.back().empty())
                 font.draw(x, y, std::to_wstring(data.back().back().level));
         }
