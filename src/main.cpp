@@ -147,6 +147,11 @@ class ScanMemController
             sendCommand("pid " + pid);
         }
 
+        void setOption(const std::string& option, const std::string& value)
+        {
+            sendCommand("option " + option + " " + value);
+        }
+
         void dumpRegion(const std::string& address, int length)
         {
             std::string command{ "dump " + address + " " + std::to_string(length) };
@@ -206,7 +211,7 @@ int main(int argc, char *argv[])
 
     if (!subprocessPid) // Child
     {
-        const char *argv[] { "/usr/bin/scanmem", "-b", nullptr };
+        const char *argv[] { "/usr/bin/scanmem", nullptr };
 
         close(outfd[0]); // Not required for the child
         close(outfd[1]);
@@ -233,6 +238,9 @@ int main(int argc, char *argv[])
 
         scanMem.setProcess(pid);
         std::string procMaps = scanMem.readCommandOutput();
+
+        scanMem.setOption("dump_with_ascii", "0");
+        std::string dumpWithAscii = scanMem.readCommandOutput();
 
         if (!glfwInit())
         {
@@ -304,7 +312,11 @@ int main(int argc, char *argv[])
 
             // Big-endian hexadecimal string
             std::string hexStrRaw = scanMem.readCommandOutput();
-            std::string hexStr = hexStrRaw.substr(3, 2) + hexStrRaw.substr(0, 2);
+            std::size_t i = hexStrRaw.find(':');
+            std::string hexStr = hexStrRaw.substr(i + 5, 2) + hexStrRaw.substr(i + 2, 2);
+
+            std::cout << hexStr << std::endl;
+
             level = std::stoi(hexStr, nullptr, 16);
 
             float gameTime{timer.getFloatTime() - 1.7f};
