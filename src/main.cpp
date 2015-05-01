@@ -239,8 +239,8 @@ int main(int argc, char *argv[])
         scanMem.setProcess(pid);
         std::string procMaps = scanMem.readCommandOutput();
 
-        scanMem.setOption("dump_with_ascii", "0");
-        std::string dumpWithAscii = scanMem.readCommandOutput();
+        // scanMem.setOption("dump_with_ascii", "0");
+        // std::string dumpWithAscii = scanMem.readCommandOutput();
 
         if (!glfwInit())
         {
@@ -313,11 +313,12 @@ int main(int argc, char *argv[])
             // Big-endian hexadecimal string
             std::string hexStrRaw = scanMem.readCommandOutput();
             std::size_t i = hexStrRaw.find(':');
-            std::string hexStr = hexStrRaw.substr(i + 5, 2) + hexStrRaw.substr(i + 2, 2);
 
-            std::cout << hexStr << std::endl;
-
-            level = std::stoi(hexStr, nullptr, 16);
+            if (i != std::string::npos)
+            {
+                std::string hexStr = hexStrRaw.substr(i + 5, 2) + hexStrRaw.substr(i + 2, 2);
+                level = std::stoi(hexStr, nullptr, 16);
+            }
 
             float gameTime{timer.getFloatTime() - 1.7f};
 
