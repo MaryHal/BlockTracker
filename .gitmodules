@@ -1,3 +1,6 @@
 [submodule "ext/FontGen"]
 	path = ext/FontGen
 	url = git@github.com:sanford1/FontGen.git
+[submodule "ext/scanmem"]
+	path = ext/scanmem
+	url = https://github.com/scanmem/scanmem.git
